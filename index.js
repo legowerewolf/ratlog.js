@@ -22,7 +22,7 @@ const ratlog = Object.assign(
 
 const getWriteFn = writer => (writer.write ? writer.write.bind(writer) : writer)
 
-function stringify ({ tags, message, fields }) {
+function stringify({ tags, message, fields }) {
   const joinedTags = tags.map(formatTag).join('|')
   const tagString = joinedTags && `[${joinedTags}] `
 
@@ -44,7 +44,7 @@ const formatMessage = val => toString(val).replace(/[|[]/g, '\\$&')
 const formatField = val => toString(val).replace(/[|:]/g, '\\$&')
 const escapeNewLines = val => val.replace(/\n/g, '\\n')
 
-function parse (logLines) {
+function parse(logLines) {
   return logLines
     .split('\n')
     .filter(line => line.length > 0)
@@ -55,7 +55,7 @@ function parse (logLines) {
 
       // Parse tags (only exist if the first char is '[' )
       if (line.charAt(0) === '[') {
-        const matches = line.match(/\[(.*(?<!\\))\]/) // Get all content inside the first non-escaped brackets
+        const matches = line.match(/\[(.*(?<!\\))\] ?/) // Get all content inside the first non-escaped brackets
         if (matches) {
           data.tags = matches[1]
             .split(/(?<!\\)\|/g) // split by unescaped pipes
@@ -77,14 +77,14 @@ function parse (logLines) {
       // Parse fields
       try {
         if (line.length > 0) {
-          const rawFields = line.split(/ (?<!\\)\| /g).slice(1)
+          const rawFields = line.split(/ (?<!\\)\| ?/g).slice(1)
 
           if (rawFields.length === 0) data.message += line
           else {
             data.fields = rawFields.reduce((accum, cur) => {
               const part = cur.split(/(?<!\\):/)
               accum[unformatField(part[0])] =
-                part.length > 1 ? unformatField(part[1]) : null
+                part.length > 1 ? unformatField(part[1]).trim() : null
               return accum
             }, {})
           }
@@ -102,7 +102,7 @@ const unformatMessage = val => val.replace(/\\\|/g, '|').replace(/\\\[/g, '[')
 const unformatField = val => val.replace(/\\\|/g, '|').replace(/\\:/g, ':')
 const unescapeNewlines = val => val.replace(/\\n/g, '\n')
 
-function toString (val) {
+function toString(val) {
   if (val == null) {
     return ''
   }
